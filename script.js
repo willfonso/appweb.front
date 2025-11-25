@@ -189,7 +189,7 @@ document.getElementById('btnConsultar').addEventListener('click', consultar);
 // -----------------------------
 async function loadPDVs() {
     try {
-        const resp = await fetch("https://appwebback.onrender.com");
+        const resp = await fetch("https://appwebback.onrender.com/pdvs");
 
         if (!resp.ok) throw new Error("No se pudo cargar PDVs");
 
@@ -214,6 +214,7 @@ async function loadPDVs() {
 document.getElementById('btnConsultar').addEventListener('click', consultar);
 
 loadPDVs();
+
 
 
 
