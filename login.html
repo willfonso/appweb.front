@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - PWA Ventas</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    /* Estilos base (puedes copiar/pegar los de tu index.html o usar solo estos) */
+    :root { --bg: #f2f2f7; --card: #fff; --text: #222; --accent: #007aff; }
+    [data-theme="dark"]{ --bg:#0b0b0b; --card:#111; --text:#eee; --accent:#0a84ff; }
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; background:var(--bg); color:var(--text); margin:0; padding:16px; display:flex; justify-content:center; align-items:center; min-height:100vh;}
+    .login-container{width:100%;max-width:350px;text-align:center;}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+    input{width:100%;padding:10px;margin-bottom:15px;border-radius:8px;border:1px solid #ddd;font-size:16px;box-sizing:border-box;}
+    button{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px;}
+    h1{margin-top:0;}
+    #error-msg{color:#b00020;padding:6px;text-align:center;font-size:14px;}
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="card">
+      <h1>Acceso al Dashboard</h1>
+
+      <div id="error-msg" style="display:none;"></div>
+
+      <input type="text" id="username" placeholder="Usuario" required>
+      <input type="password" id="password" placeholder="Contraseña" required>
+
+      <button id="btnLogin">Ingresar</button>
+      <div id="loading" style="display:none;margin-top:10px;">⏳ Verificando...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000"; 
+    const ENDPOINT_LOGIN = API_BASE + "/login";
+
+    const btnLogin = document.getElementById('btnLogin');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const errorBox = document.getElementById('error-msg');
+    const loading = document.getElementById('loading');
+    
+    // Función para manejar el login
+    async function handleLogin() {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!username || !password) {
+            errorBox.textContent = "Ingresa usuario y contraseña.";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        errorBox.style.display = 'none';
+        loading.style.display = 'block';
+        btnLogin.disabled = true;
+
+        try {
+            // Usamos POST para enviar credenciales de forma más segura
+            const params = new URLSearchParams({username, password});
+            const res = await fetch(ENDPOINT_LOGIN + '?' + params.toString(), {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            });
+
+            const json = await res.json();
+
+            if (res.ok) {
+                // Login exitoso: Guarda info del usuario (opcional) y redirige
+                console.log("Login exitoso. Usuario:", json.user);
+                localStorage.setItem('user_token', json.user.dni); // Usamos DNI como token simple
+                localStorage.setItem('user_data', JSON.stringify(json.user));
+                window.location.href = 'index.html'; // Redirige al dashboard
+            } else {
+                // Error de API: 401 (Inválido) o 400 (Contraseña no numérica)
+                errorBox.textContent = json.error || "Error de autenticación.";
+                errorBox.style.display = 'block';
+            }
+
+        } catch (e) {
+            errorBox.textContent = "Error de conexión con el servidor.";
+            errorBox.style.display = 'block';
+            console.error(e);
+        } finally {
+            loading.style.display = 'none';
+            btnLogin.disabled = false;
+        }
+    }
+
+    btnLogin.addEventListener('click', handleLogin);
+    passwordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleLogin();
+    });
+
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('SW registrado:', reg.scope);
+        }).catch(err => console.warn('SW falló:', err));
+      });
+    }
+</script>
+</body>
+</html>
